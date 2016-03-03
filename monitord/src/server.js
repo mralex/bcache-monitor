@@ -36,14 +36,12 @@ let cacheInfoMap = {
     cacheReadaheads: 'cache_readaheads',
 };
 
-
 function readData(map, root=basePath, unusedPercent) {
     let keys = Object.keys(map);
     let res = {};
 
     keys.forEach((key) => {
         let data = fs.readFileSync(`${ root }/${ map[key] }`, 'utf8').trim();
-
 
         if (key === 'cacheSize') {
             let sizeInt = parseInt(data, 10)
@@ -61,12 +59,11 @@ function readData(map, root=basePath, unusedPercent) {
 function getUnusedPercent() {
     let priorityStatsPath = `${ basePath }/bcache/cache/cache0/priority_stats`;
     let stats = fs.readFileSync(priorityStatsPath, 'utf8').split('\n');
-    let unusedMatch = stats[0].match(/(\d+)\%$/) || [];
-    let unused = unusedMatch[1];
-
+    let match = stats[0].match(/(\d+)\%$/) || [];
+    let unused = match[1];
 
     if (unused) {
-        unused = Number(unused) / 100;
+        unused = parseInt(unused, 10) / 100;
     } else {
         unused = 0;
     }
@@ -74,7 +71,7 @@ function getUnusedPercent() {
     return unused;
 }
 
-function generateStats() {
+function getStats() {
     let unused = getUnusedPercent();
     let info = readData(infoMap, undefined, unused);
     info.unusedPercent = unused;
@@ -95,12 +92,10 @@ function generateStats() {
     return bcacheStats;
 }
 
-
 function statsGen() {
-    let bcacheStats = generateStats();
-
     let log = new Log();
-    log.data = bcacheStats;
+
+    log.data = getStats();
     log.save((err) => {
         if (err) {
             console.log('Error saving log');
@@ -108,7 +103,6 @@ function statsGen() {
         }
     });
 }
-
 
 mongoose.connect(dbConfig.url);
 
